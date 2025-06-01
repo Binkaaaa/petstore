@@ -89,4 +89,17 @@ class OrderController extends Controller
         return redirect()->route('admin.orders.index')
                          ->with('success', 'Order updated successfully.');
     }
+
+    public function destroy($id)
+{
+    $order = Order::find($id);
+
+    if (!$order) {
+        return redirect()->route('admin.orders.index')->with('error', 'Order not found.');
+    }
+
+    $order->delete();
+
+    return redirect()->route('admin.orders.index')->with('success', 'Order deleted successfully.');
+}
 }

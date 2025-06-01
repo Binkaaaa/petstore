@@ -22,8 +22,10 @@ Route::middleware([
     Route::get('/dashboard', fn() => view('dashboard'))->name('dashboard');
 
     // Product browsing
-    Route::get('/products/category/{categoryName}', [ProductController::class, 'showByCategory'])->name('products.byCategory');
-    Route::get('/products/{product}', [ProductController::class, 'showView'])->name('product.show');
+    Route::get('/products/category/{categoryName}', [ProductController::class, 'showByCategory'])
+        ->name('products.byCategory');
+    Route::get('/products/{product}', [ProductController::class, 'showView'])
+        ->name('product.show');
 
     // Cart
     Route::get('/cart', [CartController::class, 'index'])->name('cart.index');
@@ -34,8 +36,9 @@ Route::middleware([
     Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout');
     Route::post('/checkout', [CheckoutController::class, 'store'])->name('checkout.store');
 
-    // Review submission (user-side)
-    Route::post('/products/{product}/reviews', [ReviewController::class, 'store'])->name('reviews.store');
+    // Review submission (user-side), nested by product
+    Route::post('/products/{product}/reviews', [ReviewController::class, 'store'])
+        ->name('products.reviews.store');
 });
 
 // Success page after checkout
@@ -52,22 +55,25 @@ Route::post('admin/logout', function () {
 })->name('admin.logout');
 
 // Admin dashboard & management routes
-Route::middleware(['auth:admin', 'verified'])->prefix('admin')->name('admin.')->group(function () {
-    Route::get('/dashboard', fn() => view('admin.dashboard'))->name('dashboard');
-    
-    // User Management (admin view page)
-    Route::get('/users', fn() => view('admin.users'))->name('users');
+Route::middleware(['auth:admin', 'verified'])
+    ->prefix('admin')
+    ->name('admin.')
+    ->group(function () {
+        Route::get('/dashboard', fn() => view('admin.dashboard'))->name('dashboard');
+        
+        // User Management
+        Route::get('/users', fn() => view('admin.users'))->name('users');
 
-    // Product Management
-    Route::get('/products', [ProductController::class, 'adminProductsPage'])->name('products');
+        // Product Management
+        Route::get('/products', [ProductController::class, 'adminProductsPage'])->name('products');
 
-    // Order Management
-    Route::resource('orders', OrderController::class);
+        // Order Management
+        Route::resource('orders', OrderController::class);
 
-    // Review Management (admin can view and delete)
-    Route::resource('reviews', ReviewController::class)->except(['index']);
-    Route::get('/reviews', [ReviewController::class, 'adminIndex'])->name('reviews.index');
-    Route::delete('/reviews/{review}', [ReviewController::class, 'destroy'])->name('reviews.destroy');
+        // Review Management (admin view & delete)
+        Route::get('/reviews', [ReviewController::class, 'adminIndex'])->name('reviews.index');
+        Route::delete('/reviews/{id}', [ReviewController::class, 'destroy'])->name('reviews.destroy');
 });
 
-
+// Contact page
+Route::get('/contact', fn() => view('contact'))->name('contact');

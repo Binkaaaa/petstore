@@ -96,7 +96,7 @@
                     @endforeach
                 </ul>
             </li>
-            <li><a href="#" class="text-white hover:text-orange-600">Contact Us</a></li>
+            <li><a href="{{ route('contact') }}" class="text-white hover:text-orange-600">Contact Us</a></li>
         </ul>
     </nav>
 

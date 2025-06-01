@@ -3,81 +3,103 @@
 namespace App\Http\Controllers;
 
 use App\Models\Review;
+use App\Models\Product;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 
 class ReviewController extends Controller
 {
-    // Admin: Paginated reviews view
+    /**
+     * Admin: show paginated reviews.
+     */
     public function adminIndex()
     {
         $reviews = Review::orderBy('created_at', 'desc')->paginate(10);
         return view('admin.reviews.index', compact('reviews'));
     }
 
-    // API: List all reviews
+    /**
+     * API: list all reviews.
+     */
     public function index()
     {
         return response()->json(Review::all());
     }
 
-    // API: Get one review
+    /**
+     * API: show one review.
+     */
     public function show($id)
     {
         $review = Review::find($id);
-        if (!$review) {
+        if (! $review) {
             return response()->json(['error' => 'Review not found'], 404);
         }
         return response()->json($review);
     }
 
-    // API: Store a new review
-    public function store(Request $request)
+    /**
+     * Store a new review for a given product.
+     * Route: POST /products/{product}/reviews
+     */
+    public function store(Request $request, Product $product)
     {
-        $request->validate([
-            'product_id' => 'required|string', // Should match the Product model ID type
-            'rating' => 'required|integer|min:1|max:5',
+        // 1) Confirm this is hit
+        Log::info("ReviewController@store called for product {$product->id} by user ".Auth::id(), $request->all());
+
+        // 2) Validate
+        $validated = $request->validate([
+            'rating'  => 'required|integer|min:1|max:5',
             'comment' => 'nullable|string',
         ]);
 
-        try {
-            $review = Review::create([
-                'product_id' => $request->product_id,
-                'user_id'    => Auth::id(),  
-                'rating' => $request->rating,
-                'comment' => $request->comment ?? '',
-            ]);
+        // 3) Create
+        $review = Review::create([
+            'product_id' => (string) $product->id,
+            'user_id'    => Auth::id(),
+            'rating'     => $validated['rating'],
+            'comment'    => $validated['comment'] ?? '',
+        ]);
 
-            return response()->json(['success' => true, 'review' => $review]);
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Error saving review: ' . $e->getMessage()
-            ], 500);
-        }
+        // 4) Return JSON
+        return response()->json(['success' => true, 'review' => $review], 201);
     }
 
-    // API: Update review
+    /**
+     * API: update an existing review.
+     */
     public function update(Request $request, $id)
     {
         $review = Review::find($id);
-        if (!$review) {
+        if (! $review) {
             return response()->json(['error' => 'Review not found'], 404);
         }
 
-        $review->update($request->only(['rating', 'comment']));
+        $validated = $request->validate([
+            'rating'  => 'sometimes|integer|min:1|max:5',
+            'comment' => 'nullable|string',
+        ]);
+
+        $review->update($validated);
         return response()->json(['success' => true, 'review' => $review]);
     }
 
-    // API: Delete review
+    /**
+     * API/Admin: delete a review.
+     */
     public function destroy($id)
     {
         $review = Review::find($id);
-        if (!$review) {
-            return response()->json(['error' => 'Review not found'], 404);
+        if ($review) {
+            $review->delete();
+            if (request()->wantsJson()) {
+                return response()->json(['success' => true], 200);
+            }
         }
 
-        $review->delete();
-        return response()->json(['success' => true]);
+        return redirect()
+            ->route('admin.reviews.index')
+            ->with('success', 'Review deleted successfully.');
     }
 }

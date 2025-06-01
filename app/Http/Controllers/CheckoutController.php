@@ -11,55 +11,75 @@ use Illuminate\Support\Facades\DB;
 class CheckoutController extends Controller
 {
     //
-    public function index()
+
+public function index()
 {
-   // Get the logged-in user
     $user = Auth::user();
 
-    // Access the cart items through relationships (adjust as needed)
-    $cartItems = $user->cart->items ?? [];
+    // What is in session cart?
+    $sessionCart = session()->get('cart', []);
+    logger('Session Cart:', $sessionCart);
 
-    // Pass cart items to the checkout view
-    return view('checkout.index', compact('cartItems'));
-}
-    public function store(Request $request)
-    {
-        $data = $request->validate([
-            'order_type'       => 'required|in:pickup,delivery',
-            'delivery_address' => 'required_if:order_type,delivery|string|max:255',
-            'delivery_city'    => 'required_if:order_type,delivery|string|max:100',
-            'delivery_postcode'=> 'required_if:order_type,delivery|string|max:20',
-            'delivery_phone'   => 'required_if:order_type,delivery|string|max:20',
-        ]);
+    // What is in user cart items?
+    $userCartItems = $user->cart->items ?? collect();
+    logger('User Cart Items:', $userCartItems->toArray());
 
-        // Retrieve cart from session
-        $sessionCart = session()->get('cart', []);
+    // Choose your source (session or user cart)
+    // For now, let's just use the session cart to make sure it's consistent with store()
+    $cartItems = collect();
 
-        // Calculate total price
-        $total = 0;
+    if (!empty($sessionCart)) {
         foreach ($sessionCart as $productId => $item) {
-            $product = Product::find($productId);
+            $product = \App\Models\Product::find($productId);
             if ($product) {
-                $total += $product->price * $item['qty'];
+                $cartItems->push([
+                    'product' => $product,
+                    'quantity' => $item['qty'],
+                ]);
             }
         }
-
-        // Create the order
-        $order = Order::create([
-            'user_id'           => Auth::id(),
-            'total_price'       => $total,
-            'order_status'      => 'pending',
-            'order_type'        => $data['order_type'],
-            'delivery_address'  => $data['delivery_address'] ?? null,
-            'delivery_city'     => $data['delivery_city'] ?? null,
-            'delivery_postcode' => $data['delivery_postcode'] ?? null,
-            'delivery_phone'    => $data['delivery_phone'] ?? null,
-        ]);
-
-        // Clear cart
-        session()->forget('cart');
-
-        return redirect()->route('dashboard')
-                         ->with('success', 'Your order has been placed successfully.');
     }
+
+    return view('checkout.index', compact('cartItems'));
+}
+
+
+public function store(Request $request)
+{
+    $data = $request->validate([
+        'order_type'       => 'required|in:pickup,delivery',
+        'delivery_address' => 'required_if:order_type,delivery|string|max:255',
+        'delivery_city'    => 'required_if:order_type,delivery|string|max:100',
+        'delivery_postcode'=> 'required_if:order_type,delivery|string|max:20',
+        'delivery_phone'   => 'required_if:order_type,delivery|string|max:20',
+    ]);
+
+    $sessionCart = session()->get('cart', []);
+    $total = 0;
+
+    foreach ($sessionCart as $productId => $item) {
+        $product = \App\Models\Product::find($productId);
+        if ($product) {
+            $total += $product->price * $item['qty'];
+        }
+    }
+
+    \App\Models\Order::create([
+        'user_id'           => Auth::id(),
+        'total_price'       => $total,
+        'order_status'      => 'pending',
+        'order_type'        => $data['order_type'],
+        'delivery_address'  => $data['delivery_address'] ?? null,
+        'delivery_city'     => $data['delivery_city'] ?? null,
+        'delivery_postcode' => $data['delivery_postcode'] ?? null,
+        'delivery_phone'    => $data['delivery_phone'] ?? null,
+    ]);
+
+    session()->forget('cart');
+
+return redirect()->route('order.success')
+    ->with('success', 'Your order has been placed successfully.')
+    ->with('phone', '011 1234 5678');
+
+}
 }

@@ -1,8 +1,11 @@
 <?php
 
+
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use App\Models\CartItem;
+
 
 class Cart extends Model
 {
@@ -27,5 +30,9 @@ class Cart extends Model
         return $this->belongsToMany(Product::class, 'cart_product')->withPivot('quantity');
     }
 
+    public function items()
+{
+    return $this->hasMany(CartItem::class);
+}
 
 }

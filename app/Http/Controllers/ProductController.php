@@ -34,28 +34,34 @@ class ProductController extends Controller
     }
 
     // Store a new product (API)
-    public function store(Request $request)
-    {
-        $validator = Validator::make($request->all(), [
-            'name'        => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'price'       => 'required|numeric|min:0',
-            'stock'       => 'required|integer|min:0',
-            'image'       => 'nullable|string',
-            'category_id' => 'nullable|exists:categories,id',
-        ]);
+public function store(Request $request)
+{
+    $validator = Validator::make($request->all(), [
+        'name'        => 'required|string|max:255',
+        'description' => 'nullable|string',
+        'price'       => 'required|numeric|min:0',
+        'stock'       => 'required|integer|min:0',
+        'image'       => 'nullable|image|max:2048',
+        'category_id' => 'nullable|exists:categories,id',
+    ]);
 
-        if ($validator->fails()) {
-            return response()->json($validator->errors(), 422);
-        }
-
-        $data = $validator->validated();
-        $data['user_id'] = Auth::id() ?? 1;
-
-        $product = Product::create($data);
-
-        return new ProductResource($product);
+    if ($validator->fails()) {
+        return response()->json($validator->errors(), 422);
     }
+
+    $data = $validator->validated();
+    $data['user_id'] = Auth::id() ?? 1;
+
+    // Handle the actual file upload
+    if ($request->hasFile('image')) {
+        $data['image'] = $request->file('image')->store('products', 'public');
+    }
+
+    $product = Product::create($data);
+
+    return new ProductResource($product);
+}
+
 
     // Update an existing product (API)
     public function update(Request $request, $id)
