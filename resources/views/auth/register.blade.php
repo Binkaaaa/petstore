@@ -58,4 +58,29 @@
             </div>
         </form>
     </div>
+    <!-- At the bottom of register.blade.php -->
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('registerForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+
+    fetch('http://localhost:8000/api/register', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+      body: JSON.stringify({
+        name: document.getElementById('name').value,
+        email: document.getElementById('email').value,
+        password: document.getElementById('password').value,
+        password_confirmation: document.getElementById('password_confirmation').value,
+      }),
+    })
+    .then(res => res.json())
+    .then(data => console.log(data))
+    .catch(err => console.error(err));
+  });
+});
+</script>
 </x-app-layout>

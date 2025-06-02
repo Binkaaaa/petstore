@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>API Register Test</title>
+</head>
+<body>
+  <h1>Testing API Register</h1>
+  <button onclick="register()">Register User</button>
+
+  <script>
+    function register() {
+      fetch('http://localhost:8000/api/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: JSON.stringify({
+          name: 'Nevinka',
+          email: 'nevinka@example.com',
+          password: 'password123',
+          password_confirmation: 'password123',
+        }),
+      })
+      .then(res => res.json())
+      .then(data => console.log(data))
+      .catch(err => console.error(err));
+    }
+  </script>
+</body>
+</html>

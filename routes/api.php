@@ -17,12 +17,19 @@ use App\Http\Controllers\AdminController;
 |--------------------------------------------------------------------------
 | Public routes (no auth required)
 */
+Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
 Route::post('/admin/login', [AdminAuthController::class, 'login']);
 Route::get('/products', [ProductController::class, 'index']);
 Route::get('/categories', [CategoryController::class, 'index']);
 Route::get('/reviews', [ReviewController::class, 'index']);
 Route::get('/reviews/{id}', [ReviewController::class, 'show']);
+Route::get('/category/{slug}', [CategoryController::class, 'show']);
+Route::post('/category/{category}', [CategoryController::class, 'show']);
+Route::post('/cart/add', [CartController::class, 'add']);
+Route::get('/cart', [CartController::class, 'index']);
+Route::post('/order/place', [OrderController::class, 'place']);
+
 
 /*
 |--------------------------------------------------------------------------

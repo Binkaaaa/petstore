@@ -61,4 +61,5 @@ class CartController extends Controller
             ->route('cart.index')
             ->with('success', "{$product->name} removed from cart.");
     }
+    
 }

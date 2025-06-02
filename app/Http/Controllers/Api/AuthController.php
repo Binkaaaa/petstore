@@ -64,5 +64,40 @@ class AuthController extends Controller
             'user' => $request->user()
         ]);
     }
+
+    // User registration - issue Sanctum token on success
+public function register(Request $request)
+{
+    // Validate request
+    $request->validate([
+        'name' => 'required|string|max:255',
+        'email' => 'required|string|email|max:255|unique:users',
+        'password' => 'required|string|min:8|confirmed',
+    ]);
+
+    // Create the user
+    $user = User::create([
+        'name' => $request->name,
+        'email' => $request->email,
+        'password' => Hash::make($request->password),
+        'user_type' => 'customer', // default type (you can adjust this)
+    ]);
+
+    // Generate token
+    $token = $user->createToken('api-token')->plainTextToken;
+
+    // Return success response
+    return response()->json([
+        'message' => 'Registration successful',
+        'token' => $token,
+        'user' => [
+            'id' => $user->id,
+            'name' => $user->name,
+            'email' => $user->email,
+            'user_type' => $user->user_type,
+        ],
+    ], 201);
+}
+
 } 
 
